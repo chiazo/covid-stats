@@ -1,7 +1,6 @@
 import requests
 import json
 from datetime import datetime
-import numpy as np
 import pandas as pd
 
 
@@ -20,7 +19,8 @@ class CityDirectory:
                 'copies_l': 'copies',
                 'copies_l_x_average_flowrate': 'copies_avg_flowrate',
                 'population_served': 'population',
-            }
+            },
+            "source_website": "https://data.cityofnewyork.us/Health/SARS-CoV-2-concentrations-measured-in-NYC-Wastewat/f7dc-2q9f/data"
         }
     }
 
@@ -62,29 +62,15 @@ class City:
         cols = city_inputs.get("columns")
         df.rename(columns=cols, inplace=True)
 
+        # convert strings to ints
+        int_cols = ["copies","copies_avg_flowrate", "population"]
+        for col in int_cols:
+            df[col] = pd.to_numeric(df[col])
+
         # turn strings into date objs
         date_format = city_inputs.get("date_format")
         date_cols = [col for col in df.columns if 'date' in col]
-        print(date_cols)
 
         for col in date_cols:
             df[col] = pd.to_datetime(df[col], format=date_format)
         return df
-
-    def parse_data(self):
-        data = self.data
-        for sample in data:
-            # '2023-05-21T00:00:00.000'
-            sample_date = datetime.strptime(
-                sample.get("sample_date"), '%Y-%m-%yT%H:%M:%S.%f')
-            test_date = datetime.strptime(
-                sample.get("test_date"), '%Y-%m-%yT%H:%M:%S.%f')
-            site_name = sample.get("wrrf_name")
-            site_abbreviation = sample.get("wrrf_abbreviation")
-            copies = int(sample.get("copies_l"))
-            copies_avg_flowrate = int(
-                sample.get("copies_l_x_average_flowrate"))
-            population = sample.get("population_served")
-            technology = sample.get("technology")
-            print(sample_date, test_date, site_name, site_abbreviation)
-            print(copies, copies_avg_flowrate, population, technology)
