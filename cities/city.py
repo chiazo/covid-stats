@@ -12,11 +12,16 @@ class CityDirectory:
             "nickname": "NYC",
             "date_format": "%Y-%m-%dT%H:%M:%S.%f",
             "columns": {
+                # date collection occurred
                 'sample_date': 'sample_date',
+                # date sample was tested
                 'test_date': 'test_date',
+                # wastewater resource recovery facility name of sample collection
                 'wrrf_name': 'site_name',
                 'wrrf_abbreviation': 'site_abbreviation',
+                # concentration of SARS-Cov2 per liter
                 'copies_l': 'copies',
+                # normalized SARS-Cov2 to average flow and population size
                 'copies_l_x_average_flowrate': 'copies_avg_flowrate',
                 'population_served': 'population',
             },
@@ -41,17 +46,15 @@ class City:
         self.data = self.get_raw_data()
 
     def get_raw_data(self):
-        # input = self.city_directory.get_city_data(self.name)
-        # endpoint = input.get("endpoint")
-        # full_name = input.get("full_name")
-        # nickname = input.get("nickname")
+        input = self.city_directory.get_city_data(self.name)
+        endpoint = input.get("endpoint")
+        full_name = input.get("full_name")
+        nickname = input.get("nickname")
 
-        # response = requests.get(endpoint)
-        # print(f"response status code: {response.status_code}")
-        # data = response.text
-        # result = json.loads(data)
-        # print(f"# of results for {full_name} - {nickname}: {len(result)}")
-        self.data = self.test_data
+        response = requests.get(endpoint)
+        data = response.text
+        result = json.loads(data)
+        self.data = result
         return self.data
 
     def get_df(self):
@@ -61,6 +64,7 @@ class City:
         # make column names more readable
         cols = city_inputs.get("columns")
         df.rename(columns=cols, inplace=True)
+        df = df.loc[df["copies"] != "NaN"]
 
         # convert strings to ints
         int_cols = ["copies","copies_avg_flowrate", "population"]
