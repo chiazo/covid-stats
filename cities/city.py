@@ -6,10 +6,30 @@ import pandas as pd
 
 class CityDirectory:
     city_directory = {
-        "new_york": {
-            "endpoint": "https://data.cityofnewyork.us/resource/f7dc-2q9f.json",
+        "new_york_city": {
+            "endpoint": "https://health.data.ny.gov/resource/hdxs-icuh.json",
             "full_name": "New York City",
             "nickname": "NYC",
+            "date_format": "%Y-%m-%dT%H:%M:%S.%f",
+            "columns": {
+                # date collection occurred
+                'samplecollectdate': 'sample_date',
+                # date sample was tested
+                'testresultdate': 'test_date',
+                # wastewater resource recovery facility name of sample collection
+                'wwtpname': 'site_name',
+                # concentration of SARS-Cov2 per liter
+                'flowrate': 'copies',
+                # normalized SARS-Cov2 to average flow and population size
+                'pcrtargetavgconc': 'copies_avg_flowrate',
+                'populationserved': 'population',
+            },
+            "source_website": "https://health.data.ny.gov/Health/New-York-State-Statewide-COVID-19-Wastewater-Surve/hdxs-icuh/explore/query/SELECT%0A%20%20%60county%60%2C%0A%20%20%60zipcode%60%2C%0A%20%20%60populationserved%60%2C%0A%20%20%60samplelocation%60%2C%0A%20%20%60samplelocationspecify%60%2C%0A%20%20%60epaid%60%2C%0A%20%20%60wwtpname%60%2C%0A%20%20%60capacitymgd%60%2C%0A%20%20%60stormwaterinput%60%2C%0A%20%20%60sampletype%60%2C%0A%20%20%60samplematrix%60%2C%0A%20%20%60pretreatment%60%2C%0A%20%20%60solidseparation%60%2C%0A%20%20%60concentrationmethod%60%2C%0A%20%20%60extractionmethod%60%2C%0A%20%20%60recefftargetname%60%2C%0A%20%20%60receffspikematrix%60%2C%0A%20%20%60receffspikeconc%60%2C%0A%20%20%60pcrtarget%60%2C%0A%20%20%60pcrgenetarget%60%2C%0A%20%20%60pcrgenetargetref%60%2C%0A%20%20%60pcrtype%60%2C%0A%20%20%60lodref%60%2C%0A%20%20%60humfractargetmic%60%2C%0A%20%20%60humfractargetmicref%60%2C%0A%20%20%60quantstantype%60%2C%0A%20%20%60stanref%60%2C%0A%20%20%60inhibitionmethod%60%2C%0A%20%20%60numnotargetcontrol%60%2C%0A%20%20%60samplecollectdate%60%2C%0A%20%20%60flowrate%60%2C%0A%20%20%60sampleid%60%2C%0A%20%20%60labid%60%2C%0A%20%20%60testresultdate%60%2C%0A%20%20%60pcrtargetavgconc%60%2C%0A%20%20%60pcrtargetbelowlod%60%2C%0A%20%20%60lodsewage%60%2C%0A%20%20%60ntcamplify%60%2C%0A%20%20%60receffpercent%60%2C%0A%20%20%60inhibitiondetect%60%2C%0A%20%20%60inhibitionadjust%60%2C%0A%20%20%60humfracmicconc%60%2C%0A%20%20%60qualityflag%60/page/filter"
+        },
+        "new_york": {
+            "endpoint": "https://data.cityofnewyork.us/resource/f7dc-2q9f.json",
+            "full_name": "New York",
+            "nickname": "NY",
             "date_format": "%Y-%m-%dT%H:%M:%S.%f",
             "columns": {
                 # date collection occurred
@@ -62,15 +82,23 @@ class City:
         city_inputs = self.city_directory.get_city_data(self.name)
 
         # make column names more readable
+        # cols = dict((v,k) for k,v in city_inputs.get("columns").items()) 
         cols = city_inputs.get("columns")
         df.rename(columns=cols, inplace=True)
-        df = df.loc[df["copies"] != "NaN"]
+        df = df.loc[(df["copies"]!= "NaN") & (df["copies"]!= "NA")]
+        df = df.loc[(df["copies_avg_flowrate"]!= "NaN") & (df["copies_avg_flowrate"]!= "NA")]
+        df = df.loc[(df["population"]!= "NaN") & (df["population"]!= "NA")]
 
         # convert strings to ints
         int_cols = ["copies","copies_avg_flowrate", "population"]
         for col in int_cols:
             df[col] = pd.to_numeric(df[col])
 
+        # filter out zeros
+        df = df.loc[(df["copies"]!= 0) & (df["copies"]!= 0)]
+        df = df.loc[(df["copies_avg_flowrate"]!= 0) & (df["copies_avg_flowrate"]!= 0)]
+        df = df.loc[(df["population"]!= 0) & (df["population"]!= 0)]
+        
         # turn strings into date objs
         date_format = city_inputs.get("date_format")
         date_cols = [col for col in df.columns if 'date' in col]

@@ -26,7 +26,7 @@ class DeliveryMethod:
             f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/.env")
         today = date.today().strftime("%m/%d/%Y")
         subject = f'[covid-stats] - {today}'
-        # self.send_text(self.message, subject)
+        self.send_text(self.message, subject)
         self.send_email(self.message, subject)
 
     def send_text(self, content, subject):
