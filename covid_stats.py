@@ -1,8 +1,7 @@
 from cities.city import City
 import matplotlib.pyplot as plt
-from math import trunc, nan
+from math import trunc
 import schedule
-import time
 import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -12,10 +11,6 @@ from notify.DeliveryMethod import DeliveryMethod
 
 def main():
     schedule.every(2).weeks.do(covid_stats)
-
-    # while True:
-    #     schedule.run_pending()
-    #     time.sleep(1)
     covid_stats()
 
 
@@ -32,7 +27,7 @@ def covid_stats():
     site_df = df.groupby([df["site_name"]])[["copies_avg_flowrate"]].mean()
     date_df = df.groupby([df["sample_date"].dt.date])[["copies_avg_flowrate"]].mean().sort_values(["sample_date"])
 
-    past_year = df[pd.to_datetime(df["sample_date"]) >= (datetime.today() - relativedelta(months=6))]
+    past_year = df[pd.to_datetime(df["sample_date"]) >= (datetime.today() - relativedelta(months=12))]
     date_df_recent = df.groupby([past_year["sample_date"].dt.date])[["copies_avg_flowrate"]].mean().sort_values(["sample_date"])
 
 
@@ -42,8 +37,8 @@ def covid_stats():
     low_recent = (date_df_recent.idxmin()[0].strftime("%m/%d/%Y"), date_df_recent.min()[0])
     curr = (df["sample_date"].iloc[-1].strftime("%m/%d/%Y"), date_df.iloc[-1][0])
 
-    pct_change_from_high = trunc(((curr[1] - peak_recent[1]) / curr[1]) * 100)
-    pct_change_from_low = trunc(((curr[1] - low_recent[1]) / curr[1]) * 100)
+    pct_change_from_high = shorten_number(trunc(((curr[1] - peak_recent[1]) / curr[1]) * 100))
+    pct_change_from_low = shorten_number(trunc(((curr[1] - low_recent[1]) / curr[1]) * 100))
 
     message = '''
     Peak: {0} - avg of {1} copies/ml.
@@ -53,7 +48,6 @@ def covid_stats():
     '''.format(peak_recent[0], shorten_number(peak_recent[1]), low_recent[0], shorten_number(low_recent[1]), curr[0], pct_change_from_high, peak_recent[0], shorten_number(curr[1]), pct_change_from_low, low_recent[0])
     
     DeliveryMethod(EMAIL, PHONE_NUMBER, CARRIER, message)
-
     
     print(f"Peak: {peak_recent[0]} - avg of {shorten_number(peak_recent[1])} copies/ml.")
     print(f"Low:  {low_recent[0]} - avg of {shorten_number(low_recent[1])} copies/ml.")
@@ -67,12 +61,14 @@ def covid_stats():
     date_df.to_csv("date.csv", sep='\t', encoding='utf-8')     
 
 def shorten_number(num):
-    num = trunc(num)
+    num = trunc((num))
     str_num = str(num)
     if len(str_num) > 9 and len(str_num) <= 12:
         return str_num[:-9] + "B"
     elif len(str_num) >= 7 and len(str_num) <= 9:
         return str_num[:-6] + "M"
+    elif len(str_num) > 3 and len(str_num) <= 7:
+        return str_num[:-3] + "K"
     else:    
         return str_num
 
